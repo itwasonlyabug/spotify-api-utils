@@ -130,3 +130,6 @@ dmypy.json
 
 # Passwords
 secrets.py
+
+# songlists
+likedsongs.json
