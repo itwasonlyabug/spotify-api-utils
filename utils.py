@@ -9,11 +9,15 @@ playlist_track_api = spotify_api_url+'playlists/'
 track_api = spotify_api_url+'tracks/'
 audio_features = spotify_api_url+'audio-features/'
 
-
 headers={
       "Content-Type": "application/json",
       "Authorization" : "Bearer {}".format(spotify_ready_token)}
 data = {}
+
+def jsonToFile(filename, json_data):
+    with open(filename, 'w') as json_file:
+        json.dump(json_data, json_file)
+    return ("File created: ", filename)
 
 def getTrackMetadata(track_id):
   
@@ -43,13 +47,17 @@ def getLikedSongs(spotify_limit, filename):
         return 1
       else:
         jsonToFile(filename, library_list.json())
- 
-        return library_list.json()
+        liked_songs = library_list.json() 
+        return liked_songs
 
-def jsonToFile(filename, json_data):
-    with open(filename, 'w') as json_file:
-        json.dump(json_data, json_file)
-    return ("File created: ", filename)
+def getTrackIds(filename):
+    track_ids=[]
+    with open(filename, 'r') as json_file:
+        data = json.load(json_file)
+        for each in range (0, len(data['items'])):
+            track_ids.append(data['items'][each]['track']['id'])
+
+    return track_ids
 
 def createPlaylist(name):
   requests.post((users_api+user_id), headers=headers)
@@ -65,15 +73,6 @@ def createPlaylist(name):
 
 def addTrackToPlaylist(track_uris, playlist_id):
     action = requests.post((users_api+user_id), headers=headers)
-    response = requests.post(playlist_track_api+playlist_id+"/tracks?uris="+track_uris)
+    response = requests.post("https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks?uris="+track_uris, headers=headers)
     print(playlist_track_api+playlist_id+"/tracks?uris="+track_uris)
     return response
-
-def getTrackIds(filename):
-    tracks=[]
-    with open(filename, 'r') as json_file:
-        data = json.load(json_file)
-        for each in range (0, len(data['items'])):
-            tracks.append(data['items'][each]['track']['id'])
-
-    return tracks
