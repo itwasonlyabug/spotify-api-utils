@@ -17,16 +17,14 @@ data = {}
 def jsonToFile(filename, json_data):
     with open(filename, 'w') as json_file:
         json.dump(json_data, json_file)
-    return ("File created: ", filename)
+    return ("File modified: ", filename)
 
 def getTrackMetadata(track_id):
-  
   track_general = requests.get((track_api + track_id), headers=headers).json()
   track_artist = track_general['artists'][0]['name']
   track_name = track_general['name']
   track_album_name = track_general['album']['name']
   track_metadata = track_artist + ' - ' + track_name + ' / ' + track_album_name
-
   return track_metadata
 
 def getTrackFeatures(track_id):
