@@ -1,8 +1,7 @@
-import sys,re
+import sys
 import utils
 
-limit = '3'
-
+limit="50"
 utils.get_liked_songs(limit, 'likedsongs.json')
 tracklist=utils.get_track_ids('likedsongs.json')
 featureList=[]
@@ -17,6 +16,5 @@ for each in tracklist:
         featureList.append(each)
         utils.get_track_metadata(each)
 
-print("Adding song(s) to playlist...")
-utils.add_tracks_to_playlist(tracklist, "0JITFS3sKzsqNJ4g6W4QqM")
+utils.add_tracks_to_playlist(featureList, utils.playlist_create("PEPE"))
 

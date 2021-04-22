@@ -7,6 +7,7 @@ import requests
 import logging
 
 logging.basicConfig(encoding='utf-8', level=logging.INFO)
+
 SPOTIFY_API_URL = 'https://api.spotify.com/v1/'
 USERS_API = SPOTIFY_API_URL+'users/'
 PLAYLIST_API = USERS_API+user_id+'/playlists'
@@ -23,10 +24,13 @@ def json_to_file(filename, json_data):
     '''Saves json_data contents to filename file'''
     with open(filename, 'w') as json_file:
         json.dump(json_data, json_file)
+        logging.info('File created: '+filename)
+        logging.debug(str(json_data))
     return ("File modified: ", filename)
 
 def get_track_metadata(track_id):
     '''Gets Metadata (album name, artist and etc.) of song'''
+    #logging.info("Getting track metadata...")
     track_general = requests.get((TRACK_API + track_id), headers=headers).json()
     track_artist = track_general['artists'][0]['name']
     track_name = track_general['name']
@@ -80,6 +84,8 @@ def playlist_exists(name):
     if re.search(name, str(response.json())) is True:
         logging.info('Playlist '+name+' already exists.')
         result = True
+    print(response.json())
+    logging.debug(str(response.json()))
     return False
 
 def playlist_has_track(playlist_id, track_id):
@@ -87,11 +93,12 @@ def playlist_has_track(playlist_id, track_id):
     response = requests.get("https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks?limit=50",
             headers=headers)
     if re.search(track_id, str(response.json())) is True:
+        logging.debug(response.json())
         logging.info('Playlist already contains track: '+track_id)
         return True
     return False
 
-def add_playlist(name):
+def playlist_create(name):
     '''Create new Playlist for the current user'''
     if playlist_exists(name) is True:
         return 1
@@ -109,6 +116,7 @@ def add_playlist(name):
 
 def add_tracks_to_playlist(track_ids, playlist_id):
     '''Adds track(s) to a specific Playlist'''
+    logging.info("Adding songs to playlist...")
     new_tracks=[]
     for each in track_ids:
       if playlist_has_track(playlist_id, each) is True:
