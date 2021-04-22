@@ -1,76 +1,126 @@
-import json, re, os
-import requests
+'''Functions that allow Spotify playlist and track manipulation'''
 from secrets import spotify_token, spotify_user_id, user_id, spotify_ready_token
+import json
+import re
+import os
+import requests
+import logging
 
-spotify_api_url = 'https://api.spotify.com/v1/'
-users_api = spotify_api_url+'users/'
-playlist_api = users_api+user_id+'/playlists'
-playlist_track_api = spotify_api_url+'playlists/'
-track_api = spotify_api_url+'tracks/'
-audio_features = spotify_api_url+'audio-features/'
+logging.basicConfig(encoding='utf-8', level=logging.INFO)
+SPOTIFY_API_URL = 'https://api.spotify.com/v1/'
+USERS_API = SPOTIFY_API_URL+'users/'
+PLAYLIST_API = USERS_API+user_id+'/playlists'
+PLAYLIST_TRACK_API = SPOTIFY_API_URL+'playlists/'
+TRACK_API = SPOTIFY_API_URL+'tracks/'
+AUDIO_FEATURES = SPOTIFY_API_URL+'audio-features/'
 
 headers={
-      "Content-Type": "application/json",
-      "Authorization" : "Bearer {}".format(spotify_ready_token)}
+            "Content-Type": "application/json",
+            "Authorization" : "Bearer {}".format(spotify_ready_token)}
 data = {}
 
-def jsonToFile(filename, json_data):
+def json_to_file(filename, json_data):
+    '''Saves json_data contents to filename file'''
     with open(filename, 'w') as json_file:
         json.dump(json_data, json_file)
     return ("File modified: ", filename)
 
-def getTrackMetadata(track_id):
-  track_general = requests.get((track_api + track_id), headers=headers).json()
-  track_artist = track_general['artists'][0]['name']
-  track_name = track_general['name']
-  track_album_name = track_general['album']['name']
-  track_metadata = track_artist + ' - ' + track_name + ' / ' + track_album_name
-  return track_metadata
+def get_track_metadata(track_id):
+    '''Gets Metadata (album name, artist and etc.) of song'''
+    track_general = requests.get((TRACK_API + track_id), headers=headers).json()
+    track_artist = track_general['artists'][0]['name']
+    track_name = track_general['name']
+    track_album_name = track_general['album']['name']
+    track_metadata = track_artist + ' - ' + track_name + ' / ' + track_album_name
+    logging.debug('Getting metadata for: '+track_id+' : '+str(track_general))
+    return track_metadata
 
-def getTrackFeatures(track_id):
-  url = audio_features + track_id
-  track_features = requests.get(url, headers=headers).json()
-  return track_features
+def get_track_features(track_id):
+    '''Gets Audio features of track (valence, danceability and etc)'''
+    url = AUDIO_FEATURES + track_id
+    track_features = requests.get(url, headers=headers).json()
+    logging.debug('Getting track features for: '+track_id+' : '+str(track_features))
+    return track_features
 
-def getLikedSongs(spotify_limit, filename):
-    # To prevent spam of Spotify's servers, I save the Library list to a file
-    # before continuing
-    if os.path.exists(filename):
-        return filename
-    else:
-      requests.post((users_api+user_id), headers=headers)
-      library_list = requests.get((spotify_api_url + 'me/tracks?limit='+spotify_limit), headers=headers)
-      if (re.search(r'\[2[0-9][0-9]\]', str(library_list))) == True:
-        print("Error Code: ", library_list)
-        return 1
-      else:
-        jsonToFile(filename, library_list.json())
-        liked_songs = library_list.json() 
-        return liked_songs
-
-def getTrackIds(filename):
+def get_track_ids(filename):
+    '''Gets all track IDs from a file'''
     track_ids=[]
     with open(filename, 'r') as json_file:
         data = json.load(json_file)
         for each in range (0, len(data['items'])):
             track_ids.append(data['items'][each]['track']['id'])
-
+    logging.debug('Getting track ids from: '+filename)
+    logging.debug(str(track_ids))
     return track_ids
 
-def createPlaylist(name):
-  requests.post((users_api+user_id), headers=headers)
+def get_liked_songs(spotify_limit, filename):
+    '''Get songs from the user's Liked Songs'''
+    # To prevent spam of Spotify's servers, I save the Library list to a file
+    # before continuing
+    if os.path.exists(filename):
+        logging.info('Songs file - '+filename+' found.')
+        return filename
+    else:
+        requests.post((USERS_API+user_id), headers=headers)
+        library_list = requests.get((SPOTIFY_API_URL + 'me/tracks?limit='+spotify_limit),
+                headers=headers)
+        if (re.search(r'\[2[0-9][0-9]\]', str(library_list))) is True:
+            logging.error('Error Code: '+ library_list)
+            return 1
+        else:
+            json_to_file(filename, library_list.json())
+            liked_songs = library_list.json()
+            logging.info('Got songs: '+str(liked_songs))
+            return liked_songs
 
-  request_body=json.dumps({
-      "name": name,
-      "public": True})
-  
-  response = requests.post(playlist_api, headers=headers, data=request_body)
-  playlist_id = response.json()['id'] 
+def playlist_exists(name):
+    '''Check if a Playlist with this name already exists'''
+    response = requests.get("https://api.spotify.com/v1/users/"+user_id+"/playlists?limit=50",
+            headers=headers)
+    if re.search(name, str(response.json())) is True:
+        logging.info('Playlist '+name+' already exists.')
+        result = True
+    return False
 
-  return playlist_id
+def playlist_has_track(playlist_id, track_id):
+    '''Check if a Playlist already contains this track'''
+    response = requests.get("https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks?limit=50",
+            headers=headers)
+    if re.search(track_id, str(response.json())) is True:
+        logging.info('Playlist already contains track: '+track_id)
+        return True
+    return False
 
-def addTrackToPlaylist(track_uris, playlist_id):
-    action = requests.post((users_api+user_id), headers=headers)
-    response = requests.post("https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks?uris="+track_uris, headers=headers)
-    print(playlist_track_api+playlist_id+"/tracks?uris="+track_uris)
+def add_playlist(name):
+    '''Create new Playlist for the current user'''
+    if playlist_exists(name) is True:
+        return 1
+    else:
+        requests.post((USERS_API+user_id), headers=headers)
+
+        request_body=json.dumps({
+            "name": name,
+            "public": True})
+
+        response = requests.post(PLAYLIST_API, headers=headers, data=request_body)
+        playlist_id = response.json()['id']
+        logging.info('Playlist '+name+' created.')
+        return playlist_id
+
+def add_tracks_to_playlist(track_ids, playlist_id):
+    '''Adds track(s) to a specific Playlist'''
+    new_tracks=[]
+    for each in track_ids:
+      if playlist_has_track(playlist_id, each) is True:
+          pass
+      else:
+          new_tracks.append(each)
+   
+    new_tracks_uris = ['spotify:track:' + x for x in new_tracks]
+    track_uris = ','.join(new_tracks_uris)
+    response = requests.post("https://api.spotify.com/v1/playlists/"+
+            playlist_id+"/tracks?uris="+track_uris,
+            headers=headers)
+
+    logging.info('Tracks added: '+track_uris+' to Playlist: '+playlist_id)
     return response
