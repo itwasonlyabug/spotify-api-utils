@@ -6,7 +6,7 @@ import os
 import requests
 import logging
 
-logging.basicConfig(encoding='utf-8', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', encoding='utf-8', level=logging.INFO)
 
 SPOTIFY_API_URL = 'https://api.spotify.com/v1/'
 USERS_API = SPOTIFY_API_URL+'users/'
