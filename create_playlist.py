@@ -1,5 +1,6 @@
-import sys
 import utils
+
+utils.commandline_menu()
 
 limit="50"
 utils.get_liked_songs(limit, 'likedsongs.json')
@@ -17,4 +18,3 @@ for each in tracklist:
         utils.track_get_metadata(each)
 
 utils.add_tracks_to_playlist(featureList, utils.playlist_create("PEPE"))
-
