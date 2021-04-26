@@ -4,12 +4,16 @@ import json
 import re
 import os
 import logging
+import argparse
 import requests
 
+
+# Logging settings
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
     encoding='utf-8',
     level=logging.INFO)
 
+# Hardcoded URLs
 SPOTIFY_API_URL = 'https://api.spotify.com/v1/'
 USERS_API = SPOTIFY_API_URL+'users/'
 PLAYLIST_API = USERS_API+user_id+'/playlists'
@@ -17,9 +21,21 @@ PLAYLIST_TRACK_API = SPOTIFY_API_URL+'playlists/'
 TRACK_API = SPOTIFY_API_URL+'tracks/'
 AUDIO_FEATURES = SPOTIFY_API_URL+'audio-features/'
 
+# General Headers
 headers={
             "Content-Type": "application/json",
             "Authorization" : "Bearer {}".format(spotify_ready_token)}
+
+def commandline_menu():
+    '''Handles commandline arguments parsing'''
+    #WIP, not implemented
+    parser = argparse.ArgumentParser(description='Connect to Spotify API')
+    parser.add_argument('-u','--userid', dest='USERID', type=str,
+        help='your Spotify userid')
+    parser.add_argument('-t, --token', dest='SPOTIFY_TOKEN', type=str,
+        help='your Spotify token')
+    args = parser.parse_args()
+    return args
 
 def json_to_file(filename, json_data):
     '''Saves json_data contents to filename file'''
