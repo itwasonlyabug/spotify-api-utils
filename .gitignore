@@ -133,3 +133,5 @@ secrets.py
 
 # songlists
 likedsongs.json
+playlists.json
+*.json
