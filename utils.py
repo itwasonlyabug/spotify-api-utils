@@ -95,16 +95,31 @@ def get_liked_songs(spotify_limit, filename):
             return liked_songs
     return filename
 
-def playlist_exists(name):
+def get_all_playlists(filename, userid):
+    requests.post(('https://api.spotify.com/v1/users/'+userid), headers=headers)
+    offset=0
+    items=1
+    playlists = []
+    while items != 0:
+        response = requests.get("https://api.spotify.com/v1/users/"+userid+"/playlists?limit=50&offset="+str(offset),
+              headers=headers).json()
+        json_to_file(filename, response)
+        offset=offset+50
+        items = len(response['items'])
+        [playlists.append(i['name']) for i in response['items']]
+        logging.info('Got playlists: %s', playlists)
+    return playlists
+
+def playlist_exists(name, userid):
     '''Check if a Playlist with this name already exists'''
-    response = requests.get("https://api.spotify.com/v1/users/"+user_id+"/playlists?limit=50",
-            headers=headers)
-    if re.search(name, str(response.json())) is True:
-        logging.debug(response.json())
+    playlists = str(get_all_playlists('playlists.json', userid))
+    if re.search(name, playlists):
+        logging.debug(playlists)
         logging.info('Playlist %s already exists', name)
         return True
-    logging.debug('%s', response.json())
-    return False
+    else:
+      logging.debug('%s', playlists)
+      return False
 
 def playlist_has_track(playlist_id, track_id):
     '''Check if a Playlist already contains this track'''
@@ -116,9 +131,9 @@ def playlist_has_track(playlist_id, track_id):
         return True
     return False
 
-def playlist_create(name):
+def playlist_create(name, userid):
     '''Create new Playlist for the current user'''
-    if playlist_exists(name) is True:
+    if playlist_exists(name, userid) is True:
         return 1
     else:
         requests.post((USERS_API+user_id), headers=headers)
