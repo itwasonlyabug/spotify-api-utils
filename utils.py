@@ -27,7 +27,7 @@ headers={
             "Authorization" : "Bearer {}".format(spotify_ready_token)}
 
 def commandline_menu():
-    '''Handles commandline arguments parsing'''
+    '''Handles commandline arguments'''
     #WIP, not implemented
     parser = argparse.ArgumentParser(description='Connect to Spotify API')
     parser.add_argument('-u','--userid', dest='USERID', type=str,
@@ -96,6 +96,7 @@ def get_liked_songs(spotify_limit, filename):
     return filename
 
 def get_all_playlists(filename, userid):
+    '''Get all playlists of selected user'''
     requests.post(('https://api.spotify.com/v1/users/'+userid), headers=headers)
     offset=0
     items=1
@@ -103,11 +104,10 @@ def get_all_playlists(filename, userid):
     while items != 0:
         response = requests.get("https://api.spotify.com/v1/users/"+userid+"/playlists?limit=50&offset="+str(offset),
               headers=headers).json()
-        json_to_file(filename, response)
         offset=offset+50
         items = len(response['items'])
         [playlists.append(i['name']) for i in response['items']]
-        logging.info('Got playlists: %s', playlists)
+    logging.info('Got playlists: %s', playlists)
     return playlists
 
 def playlist_exists(name, userid):
@@ -121,15 +121,23 @@ def playlist_exists(name, userid):
       logging.debug('%s', playlists)
       return False
 
-def playlist_has_track(playlist_id, track_id):
-    '''Check if a Playlist already contains this track'''
-    response = requests.get("https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks?limit=50",
-            headers=headers)
-    if re.search(track_id, str(response.json())) is True:
-        logging.debug(response.json())
-        logging.info('Playlist already contains track: %s', track_id)
-        return True
-    return False
+def playlist_get_tracks(playlist_id):
+    '''Get all tracks from the selected playlist'''
+    offset=0
+    items=1
+    playlist_tracks = []
+    playlist_tracks_names = []
+    while items != 0:
+        response = requests.get("https://api.spotify.com/v1/playlists/"+playlist_id+"/tracks?limit=50&offset="+str(offset),
+              headers=headers).json()
+        logging.debug('Response: %s', response)
+        offset=offset+50
+        items = len(response['items'])
+        [playlist_tracks.append(i['track']['id']) for i in response['items']]
+        [playlist_tracks_names.append(i['track']['name']) for i in response['items']]
+    logging.info('Got tracks: %s', playlist_tracks_names)
+    logging.debug('Got tracks: %s', playlist_tracks)
+    return playlist_tracks
 
 def playlist_create(name, userid):
     '''Create new Playlist for the current user'''
@@ -148,14 +156,16 @@ def playlist_create(name, userid):
         return playlist_id
 
 def add_tracks_to_playlist(track_ids, playlist_id):
-    '''Adds track(s) to a specific Playlist'''
-    logging.info("Adding songs to playlist...")
-    new_tracks=[]
-    for each in track_ids:
-        if playlist_has_track(playlist_id, each) is True:
-            pass
+    '''Adds track(s) to the selected Playlist'''
+    logging.info("Adding songs to playlist %s ...", playlist_id)
+    tracks = playlist_get_tracks(playlist_id)
+    new_tracks = []
+    for each in range(0,len(track_ids)):
+        if track_ids[each] in tracks:
+            logging.info('Playlist already contains track: %s', track_ids[each])
         else:
-            new_tracks.append(each)
+            logging.info('Adding track %s to playlist...', track_ids[each])
+            new_tracks.append(track_ids[each])
 
     new_tracks_uris = ['spotify:track:' + x for x in new_tracks]
     track_uris = ','.join(new_tracks_uris)
