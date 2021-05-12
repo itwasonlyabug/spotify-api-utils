@@ -1,3 +1,7 @@
+# Goal
+
+The goal of the tool is ot help me sort my Liked Songs into playlists based on moods, melodies and etc.
+
 ## Known Issues
 
 * Commandline arguments do not work correctly yet (you will get an error)
