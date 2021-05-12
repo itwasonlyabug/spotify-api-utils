@@ -29,7 +29,6 @@ headers={
 
 def commandline_menu():
     '''Handles commandline arguments'''
-    #WIP, not implemented
     parser = argparse.ArgumentParser(description='Create custom playlists via Spotify\'s API')
     parser.add_argument('-p', '--playlist',
         dest='PLAYLIST_NAME',
