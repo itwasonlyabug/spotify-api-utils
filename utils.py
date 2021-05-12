@@ -30,13 +30,29 @@ headers={
 def commandline_menu():
     '''Handles commandline arguments'''
     #WIP, not implemented
-    parser = argparse.ArgumentParser(description='Connect to Spotify API')
-    parser.add_argument('-u','--userid', dest='USERID', type=str,
-        help='your Spotify userid')
-    parser.add_argument('-t, --token', dest='SPOTIFY_TOKEN', type=str,
-        help='your Spotify token')
+    parser = argparse.ArgumentParser(description='Create custom playlists via Spotify\'s API')
+    parser.add_argument('-p', '--playlist',
+        dest='PLAYLIST_NAME',
+        type=str,
+        required=True,
+        help='name of playlist to be created')
+    parser.add_argument('-l', '--limit',
+        dest='REQUEST_LIMIT',
+        type=str,
+        help='limit of objects to pull with each api call (min 0, max 50)',
+        default=50)
+    parser.add_argument('-v', '--valence',
+        dest='TRACK_VALENCE', 
+        type=float,
+        metavar="[0.000-1.000]",
+        help='sets desired valence of the tracks')
+    parser.add_argument('-d', '--danceability',
+        dest='TRACK_DANCE', 
+        type=float,
+        metavar="[0.000-1.000]",
+        help='sets desired danceability of the tracks')
     args = parser.parse_args()
-    return args
+    return vars(args)
 
 def json_to_file(filename, json_data):
     '''Saves json_data contents to filename file'''
@@ -106,8 +122,9 @@ def get_all_playlists(filename, userid):
         offset=offset+50
         items = len(response['items'])
         playlists.append([i['name'] for i in response['items']])
-    logging.info('Got playlists: %s', playlists)
-    json_to_file(filename,playlists)
+    logging.info('Got playlists...')
+    logging.debug('Got playlists: %s', playlists)
+    json_to_file(filename, playlists)
     return playlists
 
 def playlist_exists(name, userid):
@@ -133,8 +150,6 @@ def playlist_get_tracks(playlist_id):
         logging.debug('Response: %s', response)
         offset=offset+50
         items = len(response['items'])
-        #[playlist_tracks.append(i['track']['id']) for i in response['items']]
-        #[playlist_tracks_names.append(i['track']['name']) for i in response['items']]
         playlist_tracks.append([i['track']['id'] for i in response['items']])
         playlist_tracks_names.append([i['track']['name'] for i in response['items']])
     logging.info('Got tracks: %s', playlist_tracks_names)
