@@ -130,11 +130,12 @@ def playlist_exists(name, userid):
     '''Check if a Playlist with this name already exists'''
     playlists = str(get_all_playlists('playlists.json', userid))
     logging.debug('%s', playlists)
+    exists = False
 
     if re.search(name, playlists):
         logging.info('Playlist %s already exists', name)
-        return True
-    return False
+        exists = True
+    return exists
 
 def playlist_get_tracks(playlist_id):
     '''Get all tracks from the selected playlist'''
@@ -157,6 +158,7 @@ def playlist_get_tracks(playlist_id):
 
 def playlist_create(name, userid):
     '''Create new Playlist for the current user'''
+    playlist_id = 1
     if playlist_exists(name, userid) is False:
         requests.post((USERS_API+user_id), headers=headers)
 
@@ -167,8 +169,7 @@ def playlist_create(name, userid):
         response = requests.post(PLAYLIST_API, headers=headers, data=request_body)
         playlist_id = response.json()['id']
         logging.info('Playlist %s created.',name)
-        return playlist_id
-    return 1
+    return playlist_id
 
 def add_tracks_to_playlist(track_ids, playlist_id):
     '''Adds track(s) to the selected Playlist'''
